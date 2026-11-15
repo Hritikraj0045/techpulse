@@ -25,6 +25,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Validate topic data and Python syntax
+        run: |
+          python -m json.tool data/topics.json > /dev/null
+          python -m json.tool data/blueprints.json > /dev/null
+          python -m py_compile scripts/generate_article.py
+
       - name: Generate today's article
         run: python scripts/generate_article.py
 
@@ -32,7 +38,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add articles data/state.json
+          git add articles data/state.json index.md
           if git diff --cached --quiet; then
             echo "Nothing new to publish."
           else
