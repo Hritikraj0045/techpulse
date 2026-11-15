@@ -1,5 +1,31 @@
 {
-  "published_topic_ids": [],
-  "published_dates": [],
-  "topic_queue": []
+  "published_topic_ids": [
+    "llm-basics"
+  ],
+  "published_dates": [
+    "2026-11-15"
+  ],
+  "topic_queue": [
+    "sql-indexes",
+    "oauth2",
+    "react-state",
+    "python-asyncio",
+    "software-testing-pyramid",
+    "data-warehousing",
+    "observability",
+    "docker-containers",
+    "jwt-auth",
+    "http3-quic",
+    "web3-smart-contracts",
+    "rag-systems",
+    "git-workflows",
+    "serverless",
+    "system-design-cache",
+    "http-rest-api",
+    "edge-computing",
+    "kubernetes-basics",
+    "machine-learning-overfit"
+  ],
+  "last_topic_id": "llm-basics",
+  "last_published_at": "2026-11-15T12:52:45.341325+05:30"
 }
