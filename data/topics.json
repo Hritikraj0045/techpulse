@@ -1,0 +1,435 @@
+[
+  {
+    "id": "python-asyncio",
+    "title": "Understanding Python asyncio and cooperative concurrency",
+    "category": "Programming",
+    "tags": [
+      "Python",
+      "asyncio",
+      "concurrency"
+    ],
+    "focus": "Python's event loop, coroutines, tasks, awaiting, I/O-bound workloads, and when threads or processes are more suitable.",
+    "example": "A small asyncio program that runs two simulated I/O tasks concurrently.",
+    "pitfalls": "Blocking the event loop with synchronous work, creating tasks without awaiting or managing them, and assuming async code automatically makes CPU-bound work faster.",
+    "questions": [
+      "What problem does asyncio solve?",
+      "How do coroutines differ from ordinary functions?",
+      "When should a developer choose threads or processes instead?"
+    ],
+    "references": [
+      "https://docs.python.org/3/library/asyncio.html"
+    ]
+  },
+  {
+    "id": "http-rest-api",
+    "title": "Designing reliable REST APIs",
+    "category": "Backend",
+    "tags": [
+      "HTTP",
+      "REST",
+      "API design"
+    ],
+    "focus": "Resource-oriented URLs, HTTP methods, status codes, validation, pagination, idempotency, versioning, and consistent error responses.",
+    "example": "A Flask-style endpoint design with request validation and predictable JSON responses.",
+    "pitfalls": "Using verbs in every URL, returning 200 for every outcome, leaking internal exceptions, and changing response contracts without a versioning strategy.",
+    "questions": [
+      "How should resources be modelled?",
+      "Which operations should be idempotent?",
+      "How should errors and pagination be represented?"
+    ],
+    "references": [
+      "https://www.rfc-editor.org/rfc/rfc9110",
+      "https://www.ietf.org/archive/id/draft-ietf-httpapi-rfc7807bis-\u0c41\u0c15\u0c41\u0c28\u0c4d\u0c28\u0c3e\u0c30\u0c41"
+    ]
+  },
+  {
+    "id": "react-state",
+    "title": "React state: choosing between local state, context and server state",
+    "category": "Frontend",
+    "tags": [
+      "React",
+      "JavaScript",
+      "frontend"
+    ],
+    "focus": "Component state, lifting state, context, derived state, server-state libraries, and avoiding unnecessary global state.",
+    "example": "A small React component with controlled input and derived UI.",
+    "pitfalls": "Duplicating derived values in state, putting all state in context, and confusing remote server data with transient UI state.",
+    "questions": [
+      "Where should state live?",
+      "When is context appropriate?",
+      "Why should derived values usually not be stored separately?"
+    ],
+    "references": [
+      "https://react.dev/learn/managing-state",
+      "https://react.dev/learn/passing-data-deeply-with-context"
+    ]
+  },
+  {
+    "id": "docker-containers",
+    "title": "Docker containers explained: images, layers and runtime isolation",
+    "category": "DevOps",
+    "tags": [
+      "Docker",
+      "containers",
+      "DevOps"
+    ],
+    "focus": "Images versus containers, layers, Dockerfiles, registries, ports, volumes, networks, and reproducible environments.",
+    "example": "A minimal Python Dockerfile and the build/run commands.",
+    "pitfalls": "Baking secrets into images, running as root unnecessarily, using oversized base images, and confusing container persistence with image contents.",
+    "questions": [
+      "What is captured in an image?",
+      "What changes when a container runs?",
+      "How should persistent data and secrets be handled?"
+    ],
+    "references": [
+      "https://docs.docker.com/get-started/"
+    ]
+  },
+  {
+    "id": "sql-indexes",
+    "title": "How database indexes improve query performance",
+    "category": "Databases",
+    "tags": [
+      "SQL",
+      "indexing",
+      "performance"
+    ],
+    "focus": "Index structures, lookup trade-offs, composite indexes, selectivity, query plans, and write amplification.",
+    "example": "A table lookup before and after adding a composite index, with EXPLAIN as the inspection tool.",
+    "pitfalls": "Indexing every column, ignoring column order in composite indexes, and assuming an index always improves a query.",
+    "questions": [
+      "Why can an index reduce reads?",
+      "What is the cost of maintaining indexes?",
+      "How can a query plan validate an indexing decision?"
+    ],
+    "references": [
+      "https://www.postgresql.org/docs/current/indexes.html",
+      "https://dev.mysql.com/doc/refman/8.4/en/optimization-indexes.html"
+    ]
+  },
+  {
+    "id": "jwt-auth",
+    "title": "JWT authentication: claims, signatures and practical security",
+    "category": "Security",
+    "tags": [
+      "JWT",
+      "authentication",
+      "security"
+    ],
+    "focus": "JWT structure, signing, claims, expiry, access and refresh tokens, key management, and server-side validation.",
+    "example": "A conceptual token validation checklist rather than a homemade cryptographic implementation.",
+    "pitfalls": "Treating encoded payloads as encrypted, accepting unsigned or weakly validated tokens, and storing long-lived tokens carelessly.",
+    "questions": [
+      "What does a signature prove?",
+      "Which claims should be validated?",
+      "How should revocation and refresh be designed?"
+    ],
+    "references": [
+      "https://www.rfc-editor.org/rfc/rfc7519",
+      "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"
+    ]
+  },
+  {
+    "id": "llm-basics",
+    "title": "How large language models generate text",
+    "category": "AI",
+    "tags": [
+      "LLM",
+      "AI",
+      "transformers"
+    ],
+    "focus": "Tokenization, embeddings, transformer attention, next-token prediction, context windows, inference, and limitations.",
+    "example": "A conceptual Python demonstration of token-by-token generation using a toy vocabulary, clearly distinguished from a real LLM.",
+    "pitfalls": "Assuming fluent output guarantees factuality, confusing training with inference, and overlooking context and evaluation limits.",
+    "questions": [
+      "What is a token?",
+      "Why is next-token prediction useful?",
+      "Why can a model produce plausible but incorrect answers?"
+    ],
+    "references": [
+      "https://arxiv.org/abs/1706.03762",
+      "https://huggingface.co/learn/nlp-course/chapter1/1"
+    ]
+  },
+  {
+    "id": "rag-systems",
+    "title": "Retrieval-augmented generation: connecting language models to private knowledge",
+    "category": "AI",
+    "tags": [
+      "RAG",
+      "embeddings",
+      "vector search"
+    ],
+    "focus": "Document ingestion, chunking, embeddings, retrieval, reranking, prompt assembly, grounding, and evaluation.",
+    "example": "A simplified retrieval pipeline using pseudocode and explicit component boundaries.",
+    "pitfalls": "Poor chunk boundaries, stale indexes, weak retrieval evaluation, and treating retrieved text as automatically trustworthy.",
+    "questions": [
+      "Why retrieve before generation?",
+      "How should chunking be evaluated?",
+      "How can citations and grounded answers be checked?"
+    ],
+    "references": [
+      "https://arxiv.org/abs/2005.11401"
+    ]
+  },
+  {
+    "id": "kubernetes-basics",
+    "title": "Kubernetes fundamentals: pods, deployments and services",
+    "category": "Cloud & Infrastructure",
+    "tags": [
+      "Kubernetes",
+      "containers",
+      "orchestration"
+    ],
+    "focus": "Control plane, nodes, pods, deployments, services, desired state, scheduling, and health probes.",
+    "example": "A small illustrative Deployment and Service manifest.",
+    "pitfalls": "Treating pods as permanent, skipping resource requests and limits, and exposing services without understanding network scope.",
+    "questions": [
+      "What does a Deployment manage?",
+      "Why are Services separate from Pods?",
+      "How does reconciliation maintain desired state?"
+    ],
+    "references": [
+      "https://kubernetes.io/docs/concepts/overview/"
+    ]
+  },
+  {
+    "id": "system-design-cache",
+    "title": "Caching strategies in system design",
+    "category": "System Design",
+    "tags": [
+      "caching",
+      "Redis",
+      "performance"
+    ],
+    "focus": "Cache-aside, write-through, TTLs, invalidation, eviction, cache stampedes, and consistency trade-offs.",
+    "example": "A safe cache-aside pseudocode example with a time-to-live.",
+    "pitfalls": "Ignoring invalidation, caching user-specific data under shared keys, and assuming cache contents are authoritative.",
+    "questions": [
+      "When should data be cached?",
+      "How should stale data be handled?",
+      "What causes a cache stampede?"
+    ],
+    "references": [
+      "https://redis.io/docs/latest/develop/"
+    ]
+  },
+  {
+    "id": "git-workflows",
+    "title": "Git branching and collaboration workflows for engineering teams",
+    "category": "Developer Tools",
+    "tags": [
+      "Git",
+      "GitHub",
+      "collaboration"
+    ],
+    "focus": "Commits, branches, pull requests, reviews, merge strategies, rebasing, and keeping history understandable.",
+    "example": "A typical feature branch workflow with commands.",
+    "pitfalls": "Committing secrets, force-pushing shared branches carelessly, and using large commits that are difficult to review.",
+    "questions": [
+      "What makes a commit reviewable?",
+      "When is rebase useful?",
+      "How should teams protect their main branch?"
+    ],
+    "references": [
+      "https://git-scm.com/docs",
+      "https://docs.github.com/en/pull-requests"
+    ]
+  },
+  {
+    "id": "web3-smart-contracts",
+    "title": "Smart contracts and blockchain: what developers should understand",
+    "category": "Web3",
+    "tags": [
+      "blockchain",
+      "smart contracts",
+      "Web3"
+    ],
+    "focus": "Transactions, blocks, consensus at a high level, deterministic execution, contract state, gas, and auditability.",
+    "example": "A harmless conceptual Solidity storage example, not deployment instructions.",
+    "pitfalls": "Assuming code is automatically secure because it is on-chain, ignoring transaction costs, and misunderstanding immutability and upgradeability.",
+    "questions": [
+      "What makes a smart contract deterministic?",
+      "Why do transactions cost gas?",
+      "Why are audits and testing essential?"
+    ],
+    "references": [
+      "https://ethereum.org/en/developers/docs/",
+      "https://docs.soliditylang.org/"
+    ]
+  },
+  {
+    "id": "observability",
+    "title": "Observability for backend systems: logs, metrics and traces",
+    "category": "Operations",
+    "tags": [
+      "observability",
+      "logging",
+      "monitoring"
+    ],
+    "focus": "Structured logs, metrics, distributed traces, correlation IDs, service-level indicators, and alert quality.",
+    "example": "Structured JSON logging in Python with a request correlation identifier.",
+    "pitfalls": "Logging secrets, alerting on noisy symptoms, and relying on logs alone to understand distributed latency.",
+    "questions": [
+      "What question does each signal answer?",
+      "How do correlation IDs help?",
+      "What makes an alert actionable?"
+    ],
+    "references": [
+      "https://opentelemetry.io/docs/",
+      "https://sre.google/sre-book/monitoring-distributed-systems/"
+    ]
+  },
+  {
+    "id": "oauth2",
+    "title": "OAuth 2.0 and OpenID Connect: delegated access versus identity",
+    "category": "Security",
+    "tags": [
+      "OAuth 2.0",
+      "OIDC",
+      "identity"
+    ],
+    "focus": "Authorization versus authentication, roles of client/resource server/authorization server, scopes, tokens, and OIDC identity layer.",
+    "example": "A conceptual authorization-code flow diagram in text.",
+    "pitfalls": "Using an access token as proof of identity, mishandling redirects, and choosing flows without considering the client type.",
+    "questions": [
+      "What problem does OAuth solve?",
+      "What does OpenID Connect add?",
+      "Why are redirect URIs and state validation important?"
+    ],
+    "references": [
+      "https://oauth.net/2/",
+      "https://openid.net/developers/how-connect-works/"
+    ]
+  },
+  {
+    "id": "machine-learning-overfit",
+    "title": "Overfitting and underfitting in machine learning",
+    "category": "Machine Learning",
+    "tags": [
+      "ML",
+      "model evaluation",
+      "data science"
+    ],
+    "focus": "Generalization, training and validation sets, model complexity, regularization, cross-validation, and leakage.",
+    "example": "A small scikit-learn train/validation workflow outline.",
+    "pitfalls": "Tuning repeatedly on the test set, data leakage, and relying on accuracy for imbalanced datasets.",
+    "questions": [
+      "How can training and validation scores reveal overfitting?",
+      "What does regularization do?",
+      "How can data leakage invalidate evaluation?"
+    ],
+    "references": [
+      "https://scikit-learn.org/stable/modules/cross_validation.html",
+      "https://scikit-learn.org/stable/modules/linear_model.html"
+    ]
+  },
+  {
+    "id": "edge-computing",
+    "title": "Edge computing: processing data closer to where it is created",
+    "category": "Emerging Technology",
+    "tags": [
+      "edge computing",
+      "IoT",
+      "cloud"
+    ],
+    "focus": "Latency, bandwidth, local processing, device constraints, cloud-edge coordination, and operational trade-offs.",
+    "example": "A conceptual sensor-to-edge-to-cloud data flow.",
+    "pitfalls": "Assuming edge removes the need for cloud systems, underestimating device fleet management, and neglecting intermittent connectivity.",
+    "questions": [
+      "Which workloads benefit from edge processing?",
+      "What belongs locally versus centrally?",
+      "How should edge devices be updated and monitored?"
+    ],
+    "references": [
+      "https://www.nist.gov/publications/fog-computing-conceptual-model"
+    ]
+  },
+  {
+    "id": "http3-quic",
+    "title": "HTTP/3 and QUIC: modern transport for the web",
+    "category": "Networking",
+    "tags": [
+      "HTTP/3",
+      "QUIC",
+      "networking"
+    ],
+    "focus": "HTTP evolution, QUIC over UDP, stream multiplexing, connection setup, encryption integration, and deployment considerations.",
+    "example": "A protocol negotiation inspection using browser developer tools or curl where supported.",
+    "pitfalls": "Assuming HTTP/3 is simply HTTP/2 over UDP, and overlooking network middleboxes and fallback behavior.",
+    "questions": [
+      "What limitations does QUIC address?",
+      "How does stream multiplexing help?",
+      "How can a developer verify which protocol is in use?"
+    ],
+    "references": [
+      "https://www.rfc-editor.org/rfc/rfc9114",
+      "https://www.rfc-editor.org/rfc/rfc9000"
+    ]
+  },
+  {
+    "id": "data-warehousing",
+    "title": "Data warehouses, data lakes and lakehouses explained",
+    "category": "Data Engineering",
+    "tags": [
+      "data engineering",
+      "analytics",
+      "architecture"
+    ],
+    "focus": "OLTP versus OLAP, structured and raw data, transformation, governance, batch and streaming, and lakehouse concepts.",
+    "example": "A simplified ingestion-to-curated-table pipeline.",
+    "pitfalls": "Ignoring data quality and lineage, confusing storage with architecture, and building pipelines without ownership or recovery plans.",
+    "questions": [
+      "How do analytical workloads differ from transactional workloads?",
+      "Where should transformations occur?",
+      "What governance is needed for reliable analytics?"
+    ],
+    "references": [
+      "https://cloud.google.com/learn/what-is-a-data-warehouse",
+      "https://databricks.com/glossary/data-lakehouse"
+    ]
+  },
+  {
+    "id": "serverless",
+    "title": "Serverless computing: benefits, limits and architectural trade-offs",
+    "category": "Cloud & Infrastructure",
+    "tags": [
+      "serverless",
+      "cloud",
+      "architecture"
+    ],
+    "focus": "Function-as-a-service, event-driven execution, scaling, cold starts, execution limits, pricing, and vendor constraints.",
+    "example": "A conceptual event-triggered function handler.",
+    "pitfalls": "Assuming serverless means no servers, ignoring execution limits, and overlooking observability and local development complexity.",
+    "questions": [
+      "What does the provider manage?",
+      "When can cold starts matter?",
+      "Which workloads are a poor fit?"
+    ],
+    "references": [
+      "https://docs.aws.amazon.com/lambda/latest/dg/welcome.html"
+    ]
+  },
+  {
+    "id": "software-testing-pyramid",
+    "title": "The software testing pyramid: unit, integration and end-to-end tests",
+    "category": "Software Engineering",
+    "tags": [
+      "testing",
+      "quality",
+      "CI"
+    ],
+    "focus": "Test scope, feedback speed, isolation, integration boundaries, end-to-end coverage, and test maintenance.",
+    "example": "A small pytest unit test and a description of an integration test boundary.",
+    "pitfalls": "Treating the pyramid as a rigid ratio, over-mocking, and allowing flaky end-to-end tests to dominate feedback.",
+    "questions": [
+      "What should a unit test isolate?",
+      "When is an integration test more valuable?",
+      "How should flaky tests be handled?"
+    ],
+    "references": [
+      "https://docs.pytest.org/en/stable/",
+      "https://martinfowler.com/articles/practical-test-pyramid.html"
+    ]
+  }
+]
