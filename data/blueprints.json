@@ -1,0 +1,898 @@
+[
+  {
+    "id": "llm-basics",
+    "problem": "A language model must turn a finite prompt into a coherent sequence while operating over numerical representations rather than human-readable meaning directly.",
+    "concepts": [
+      [
+        "Tokenization",
+        "A tokenizer maps text into token IDs. A token can be a whole word, a word fragment, punctuation, or whitespace-related unit; token boundaries are not the same as word boundaries."
+      ],
+      [
+        "Embeddings and position",
+        "Token IDs are mapped to learned vectors. Positional information is added so the model can distinguish order; otherwise attention alone would not tell it whether a token came first or last."
+      ],
+      [
+        "Self-attention",
+        "Queries, keys, and values let each position build a context-aware representation by weighting information from other positions. Multiple heads can learn different relationships."
+      ],
+      [
+        "Next-token prediction",
+        "The final representation is transformed into logits over the vocabulary. Softmax converts logits into probabilities, and a decoding strategy selects the next token."
+      ],
+      [
+        "Autoregressive inference",
+        "The chosen token is appended to the context and the process repeats until a stop condition or output limit is reached. This is why generation is sequential even when parts of each forward pass are parallelized."
+      ]
+    ],
+    "flow": "Prompt text --> Tokenizer --> Token IDs --> Embedding + position --> Transformer blocks --> Vocabulary logits --> Decoder --> Next token",
+    "code": "import math\n\n# A tiny illustration of converting logits into probabilities.\n# Real language models use optimized tensor operations over large vocabularies.\ndef softmax(logits):\n    peak = max(logits)  # numerical stability\n    exps = [math.exp(x - peak) for x in logits]\n    total = sum(exps)\n    return [value / total for value in exps]\n\nvocabulary = [\"cat\", \"dog\", \"runs\"]\nlogits = [2.4, 1.8, 0.2]\nprobabilities = softmax(logits)\n\nfor token, probability in zip(vocabulary, probabilities):\n    print(f\"{token:>5}: {probability:.3f}\")",
+    "use": [
+      "Drafting, summarization, and conversational interfaces",
+      "Code assistance and natural-language interfaces over structured tools"
+    ],
+    "tradeoffs": [
+      "Larger models can represent richer patterns but increase inference cost and latency.",
+      "Sampling can improve variety but may reduce determinism; greedy decoding is repeatable but can be dull or brittle."
+    ],
+    "mistakes": [
+      "Treating tokens as words; tokenization is model- and vocabulary-specific.",
+      "Assuming a fluent completion is necessarily true; next-token prediction is not a built-in fact-checking mechanism."
+    ],
+    "questions": [
+      "Why does a transformer need positional information?",
+      "What do query, key, and value represent intuitively?",
+      "Why is text generation called autoregressive?"
+    ]
+  },
+  {
+    "id": "python-asyncio",
+    "problem": "A service often spends much of its time waiting for network, disk, or database operations. Creating one operating-system thread per task can become expensive or difficult to coordinate.",
+    "concepts": [
+      [
+        "Event loop",
+        "The event loop schedules coroutines and resumes them when awaited operations become ready. A coroutine cooperatively yields control at await points."
+      ],
+      [
+        "Coroutines and tasks",
+        "Calling an async function creates a coroutine object. Scheduling it as a Task lets the event loop drive it; awaiting a task retrieves its result."
+      ],
+      [
+        "Concurrency versus parallelism",
+        "Asyncio interleaves waiting tasks on one event-loop thread. It is useful for I/O concurrency, but it does not automatically run CPU-heavy Python code in parallel."
+      ],
+      [
+        "Blocking calls",
+        "A synchronous blocking function called on the event-loop thread prevents other coroutines from progressing. Use async libraries or move blocking work to an executor."
+      ]
+    ],
+    "flow": "Create coroutine --> Schedule task --> Await I/O --> Event loop runs another ready task --> I/O completes --> Resume coroutine",
+    "code": "import asyncio\n\nasync def fetch(label: str, delay: float) -> str:\n    print(f\"starting {label}\")\n    await asyncio.sleep(delay)  # stands in for non-blocking I/O\n    return f\"finished {label}\"\n\nasync def main():\n    results = await asyncio.gather(\n        fetch(\"profile\", 1.0),\n        fetch(\"orders\", 0.5),\n    )\n    print(results)\n\nif __name__ == \"__main__\":\n    asyncio.run(main())",
+    "use": [
+      "High-concurrency HTTP clients and API gateways",
+      "Applications coordinating many independent network or database waits"
+    ],
+    "tradeoffs": [
+      "Async code can handle many waiting operations with fewer threads, but requires async-compatible dependencies.",
+      "Threads are often simpler for blocking I/O libraries; processes or native code may be better for CPU-bound work."
+    ],
+    "mistakes": [
+      "Calling time.sleep() or blocking database code directly inside an async function.",
+      "Creating background tasks without retaining, awaiting, or cancelling them during shutdown."
+    ],
+    "questions": [
+      "What happens when a coroutine reaches await?",
+      "Why does asyncio not automatically accelerate CPU-bound work?",
+      "How would you safely call a blocking library from async code?"
+    ]
+  },
+  {
+    "id": "http-rest-api",
+    "problem": "Different clients need a stable way to create, read, update, and delete resources over a network while handling failures predictably.",
+    "concepts": [
+      [
+        "Resources and representations",
+        "Model URLs around resources such as /users/42. JSON is a common representation, but the resource is conceptually separate from its representation."
+      ],
+      [
+        "HTTP semantics",
+        "GET retrieves, POST commonly creates or triggers processing, PUT replaces, PATCH partially modifies, and DELETE removes. Status codes communicate outcomes."
+      ],
+      [
+        "Validation and errors",
+        "Validate untrusted input at the boundary. Return consistent error structures without exposing stack traces or secrets."
+      ],
+      [
+        "Idempotency and retries",
+        "GET, PUT, and DELETE are defined as idempotent in their intended semantics. For retryable payment-like POST operations, an idempotency key can prevent duplicate effects."
+      ],
+      [
+        "Pagination and versioning",
+        "Use cursor or page-based pagination for collections. Evolve response contracts deliberately and document compatibility."
+      ]
+    ],
+    "flow": "Client --> HTTP request --> Authentication --> Validation --> Business service --> Persistence --> HTTP response",
+    "code": "from flask import Flask, jsonify, request\n\napp = Flask(__name__)\n\n@app.post(\"/api/tasks\")\ndef create_task():\n    payload = request.get_json(silent=True) or {}\n    title = payload.get(\"title\")\n    if not isinstance(title, str) or not title.strip():\n        return jsonify({\"error\": {\"code\": \"invalid_title\",\n                                  \"message\": \"title is required\"}}), 400\n    # Persist through a service/repository in a real application.\n    return jsonify({\"id\": 101, \"title\": title.strip()}), 201\n\nif __name__ == \"__main__\":\n    app.run(debug=True)  # development only; use a production server when deployed",
+    "use": [
+      "Public APIs consumed by web and mobile clients",
+      "Internal service boundaries that need independently deployable contracts"
+    ],
+    "tradeoffs": [
+      "REST is widely understood and works well with HTTP infrastructure; highly nested or client-specific data needs may cause over-fetching.",
+      "Offset pagination is simple; cursor pagination is often more stable for changing large datasets."
+    ],
+    "mistakes": [
+      "Returning HTTP 200 for validation and server failures alike.",
+      "Leaking exception details or trusting client-supplied ownership fields without authorization checks."
+    ],
+    "questions": [
+      "What is the difference between PUT and PATCH?",
+      "Why does idempotency matter when clients retry requests?",
+      "When would cursor pagination be preferable?"
+    ]
+  },
+  {
+    "id": "react-state",
+    "problem": "As a React interface grows, developers need to decide which component owns each piece of state and how changes should reach other components.",
+    "concepts": [
+      [
+        "Local state",
+        "Use component state for transient UI data owned by one component, such as whether a menu is open."
+      ],
+      [
+        "Lifting state",
+        "When sibling components must coordinate, move the shared state to their closest common parent and pass values and callbacks down."
+      ],
+      [
+        "Context",
+        "Context avoids passing the same value through many intermediate components. It is useful for broadly needed values, but is not a default container for every state variable."
+      ],
+      [
+        "Derived state",
+        "If a value can be calculated from props or existing state during render, usually calculate it rather than storing a second copy that can become inconsistent."
+      ],
+      [
+        "Server state",
+        "Remote data has caching, freshness, retries, and synchronization concerns. Treat it separately from local interaction state."
+      ]
+    ],
+    "flow": "User event --> State owner updates --> React schedules render --> Components read new state --> UI reconciles",
+    "code": "import { useState } from \"react\";\n\nexport default function SearchBox({ items }) {\n  const [query, setQuery] = useState(\"\");\n  const visibleItems = items.filter((item) =>\n    item.toLowerCase().includes(query.toLowerCase())\n  );\n\n  return (\n    <section>\n      <label>\n        Search\n        <input value={query} onChange={(event) => setQuery(event.target.value)} />\n      </label>\n      <ul>{visibleItems.map((item) => <li key={item}>{item}</li>)}</ul>\n    </section>\n  );\n}",
+    "use": [
+      "Forms, filters, tabs, dialogs, and other interactive UI",
+      "Shared user/session preferences or application-wide configuration"
+    ],
+    "tradeoffs": [
+      "Lifting state makes coordination explicit but can increase prop passing.",
+      "Context reduces prop drilling but broad context updates can cause unnecessary renders if the value changes frequently."
+    ],
+    "mistakes": [
+      "Storing filteredItems separately when it can be derived from items and query.",
+      "Putting all application state in one global context without considering ownership and update frequency."
+    ],
+    "questions": [
+      "When should state be lifted to a parent?",
+      "What problem does Context solve, and what does it not solve?",
+      "Why is derived state often a source of bugs?"
+    ]
+  },
+  {
+    "id": "docker-containers",
+    "problem": "Applications behave differently across developer machines, test environments, and production because dependencies and runtime assumptions drift.",
+    "concepts": [
+      [
+        "Image and container",
+        "An image is an immutable template made of filesystem layers and metadata. A container is a running instance with an isolated process environment and a writable layer."
+      ],
+      [
+        "Dockerfile layers",
+        "Each build instruction contributes to the image build process. Ordering stable dependency steps before frequently changing source files can improve cache reuse."
+      ],
+      [
+        "Ports and networks",
+        "A process listening inside a container is not automatically reachable from the host. Port publishing and container networks define connectivity."
+      ],
+      [
+        "Volumes",
+        "Volumes persist data independently of a container's writable layer and are commonly used for databases or development mounts."
+      ],
+      [
+        "Configuration and secrets",
+        "Keep environment-specific configuration outside the image. Do not bake credentials into Dockerfile instructions or committed files."
+      ]
+    ],
+    "flow": "Dockerfile + build context --> Image layers --> Registry --> Container runtime --> Process + network + mounted volumes",
+    "code": "FROM python:3.12-slim\nWORKDIR /app\n\n# Install dependencies separately so this layer can be cached.\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\n\nCOPY . .\nEXPOSE 8000\nCMD [\"python\", \"app.py\"]",
+    "use": [
+      "Reproducible local development and CI test environments",
+      "Packaging services for deployment across container platforms"
+    ],
+    "tradeoffs": [
+      "Containers improve packaging consistency but do not remove the need to manage storage, networking, security, and observability.",
+      "Smaller images reduce transfer and attack surface, but minimal images may require extra debugging discipline."
+    ],
+    "mistakes": [
+      "Copying secrets into image layers, where deleting them in a later layer does not remove them from image history.",
+      "Assuming data written only to a container's writable layer will survive container replacement."
+    ],
+    "questions": [
+      "What is the difference between an image and a container?",
+      "Why should dependencies be copied before frequently changing source code?",
+      "How do volumes differ from the container writable layer?"
+    ]
+  },
+  {
+    "id": "sql-indexes",
+    "problem": "A query that scans every row becomes increasingly expensive as a table grows, especially when the same lookup pattern is repeated.",
+    "concepts": [
+      [
+        "Index structure",
+        "A database index is an auxiliary structure that helps locate rows without scanning the entire table. B-tree indexes are common for equality and range predicates."
+      ],
+      [
+        "Composite indexes",
+        "A multi-column index orders entries by its column sequence. The leading columns and query predicates strongly influence whether it can be used efficiently."
+      ],
+      [
+        "Selectivity",
+        "An index is most useful when it narrows the candidate rows enough to justify the lookup and table access. Low-selectivity columns may be less useful alone."
+      ],
+      [
+        "Write cost",
+        "INSERT, UPDATE, and DELETE operations must maintain relevant indexes. More indexes consume storage and can slow writes."
+      ],
+      [
+        "Query plans",
+        "EXPLAIN tools show the chosen access path, estimated rows, joins, and other operations. Compare plans and timings with representative data."
+      ]
+    ],
+    "flow": "SQL query --> Optimizer estimates plans --> Chooses scan/index access --> Reads matching rows --> Returns result",
+    "code": "-- Example schema and composite index\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    customer_id BIGINT NOT NULL,\n    created_at TIMESTAMP NOT NULL,\n    status VARCHAR(20) NOT NULL\n);\n\nCREATE INDEX idx_orders_customer_created\n    ON orders (customer_id, created_at);\n\n-- Inspect the actual plan in your database engine:\nEXPLAIN SELECT id, created_at\nFROM orders\nWHERE customer_id = 42\nORDER BY created_at DESC;",
+    "use": [
+      "Frequently queried transactional tables with predictable filter patterns",
+      "Supporting joins, uniqueness constraints, and ordered range lookups"
+    ],
+    "tradeoffs": [
+      "Indexes can reduce read work but add storage and write-maintenance cost.",
+      "A covering index may avoid table lookups but can become large and expensive to maintain."
+    ],
+    "mistakes": [
+      "Creating an index for every column without examining workload and query plans.",
+      "Ignoring composite index column order and assuming an index will be used for every predicate."
+    ],
+    "questions": [
+      "Why can an index speed up reads but slow down writes?",
+      "What does selectivity mean?",
+      "How would you decide the order of columns in a composite index?"
+    ]
+  },
+  {
+    "id": "jwt-auth",
+    "problem": "A stateless API needs a compact way to carry claims between a client and server while detecting whether those claims have been altered.",
+    "concepts": [
+      [
+        "JWT structure",
+        "A compact JWT commonly has a header, payload, and signature separated by dots. The first two parts are Base64URL-encoded; encoding is not encryption."
+      ],
+      [
+        "Signature validation",
+        "The server validates the signature using an explicitly allowed algorithm and trusted key. It must not accept an algorithm merely because the token header requests it."
+      ],
+      [
+        "Claims",
+        "Validate issuer, audience, expiry, not-before, and application-specific authorization claims as appropriate."
+      ],
+      [
+        "Token lifecycle",
+        "Short-lived access tokens limit exposure. Refresh-token rotation, revocation strategy, and secure storage must be designed for the application threat model."
+      ],
+      [
+        "Key management",
+        "Protect signing keys, rotate them deliberately, and use key identifiers only to select from a trusted key set."
+      ]
+    ],
+    "flow": "User authenticates --> Authorization server issues signed token --> Client sends bearer token --> API validates signature + claims --> Authorization decision",
+    "code": "# Illustrative validation checklist; use a maintained JWT library.\nrequired_checks = {\n    \"signature\": \"verify with a trusted key and explicit algorithm allow-list\",\n    \"issuer\": \"must match the expected issuer\",\n    \"audience\": \"must include this API\",\n    \"expiration\": \"exp must be in the future\",\n    \"not_before\": \"nbf must be satisfied when present\",\n}\n\nfor check, requirement in required_checks.items():\n    print(f\"{check}: {requirement}\")",
+    "use": [
+      "Bearer-token authentication between clients and APIs",
+      "Short-lived signed assertions between trusted services"
+    ],
+    "tradeoffs": [
+      "Self-contained tokens reduce session lookups but make immediate revocation harder.",
+      "Short expiry limits exposure but increases refresh traffic and lifecycle complexity."
+    ],
+    "mistakes": [
+      "Treating the payload as secret because it is encoded.",
+      "Skipping audience or issuer validation, or trusting the token's algorithm header without an allow-list."
+    ],
+    "questions": [
+      "Does a JWT payload provide confidentiality?",
+      "Which claims should an API validate?",
+      "Why is revocation more complicated with self-contained access tokens?"
+    ]
+  },
+  {
+    "id": "rag-systems",
+    "problem": "A language model may not know private, current, or organization-specific information. Retrieval-augmented generation supplies relevant external context at answer time.",
+    "concepts": [
+      [
+        "Ingestion",
+        "Documents are parsed, cleaned, split into chunks, and annotated with metadata such as source, access scope, and version."
+      ],
+      [
+        "Embeddings",
+        "An embedding model maps text to vectors so semantically related passages can be retrieved even when they do not share exact keywords."
+      ],
+      [
+        "Retrieval and reranking",
+        "A retriever finds candidate passages; a reranker can reorder them using a more expensive relevance model before context is assembled."
+      ],
+      [
+        "Grounded generation",
+        "Retrieved passages are placed into a prompt with instructions to answer from evidence and identify gaps. Retrieval does not guarantee the model will use evidence correctly."
+      ],
+      [
+        "Evaluation",
+        "Measure retrieval recall and relevance separately from answer correctness, citation support, latency, and refusal behavior."
+      ]
+    ],
+    "flow": "Documents --> Parse + chunk --> Embed + index --> User query --> Retrieve --> Rerank --> Context + prompt --> LLM answer + citations",
+    "code": "def build_context(passages, max_chars=6000):\n    \"\"\"Assemble retrieved passages while retaining source labels.\"\"\"\n    blocks = []\n    used = 0\n    for passage in passages:\n        block = f\"[Source: {passage['source']}]\\n{passage['text']}\"\n        if used + len(block) > max_chars:\n            break\n        blocks.append(block)\n        used += len(block)\n    return \"\\n\\n---\\n\\n\".join(blocks)\n\n# A production pipeline would retrieve and rerank passages before this step.",
+    "use": [
+      "Question answering over internal policies, manuals, and knowledge bases",
+      "Support assistants that need source-linked answers from document collections"
+    ],
+    "tradeoffs": [
+      "Vector retrieval handles semantic similarity; hybrid keyword + vector search can improve exact identifier matching.",
+      "Smaller chunks improve precision but may lose context; larger chunks preserve context but can add irrelevant text."
+    ],
+    "mistakes": [
+      "Assuming a vector database alone makes answers factual or secure.",
+      "Ignoring document permissions and returning passages a user is not authorized to see."
+    ],
+    "questions": [
+      "Why is chunking a critical design decision?",
+      "What is reranking used for?",
+      "How would you evaluate retrieval quality separately from answer quality?"
+    ]
+  },
+  {
+    "id": "kubernetes-basics",
+    "problem": "A containerized service must keep running across machine failures, scale with demand, and expose stable network access even as individual containers are replaced.",
+    "concepts": [
+      [
+        "Pod",
+        "A Pod is Kubernetes' smallest deployable unit and can contain one or more tightly coupled containers sharing network and storage context."
+      ],
+      [
+        "Deployment",
+        "A Deployment manages ReplicaSets and declares the desired number and version of Pods. The controller reconciles actual state toward desired state."
+      ],
+      [
+        "Service",
+        "A Service provides a stable virtual endpoint for a changing set of Pods selected by labels."
+      ],
+      [
+        "Scheduling and resources",
+        "The scheduler places Pods on nodes using resource requests and constraints. Limits and probes help manage runtime behavior."
+      ],
+      [
+        "Reconciliation",
+        "Kubernetes controllers continuously compare observed state with desired state and take actions to reduce the difference."
+      ]
+    ],
+    "flow": "Deployment manifest --> API server --> Controllers create ReplicaSet --> Scheduler places Pods --> Service selects ready Pods",
+    "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: web\n  template:\n    metadata:\n      labels:\n        app: web\n    spec:\n      containers:\n        - name: web\n          image: nginx:1.27\n          ports:\n            - containerPort: 80\n          resources:\n            requests:\n              cpu: 100m\n              memory: 64Mi\n            limits:\n              cpu: 500m\n              memory: 256Mi",
+    "use": [
+      "Deploying stateless services with declarative rollout and scaling",
+      "Running multi-service workloads with service discovery and health management"
+    ],
+    "tradeoffs": [
+      "Kubernetes provides powerful orchestration but adds operational complexity and requires platform expertise.",
+      "Readiness probes protect traffic routing; liveness probes can restart stuck containers but overly aggressive probes cause restart loops."
+    ],
+    "mistakes": [
+      "Treating Pod IPs as stable endpoints instead of using Services.",
+      "Omitting resource requests, limits, and health probes for production workloads."
+    ],
+    "questions": [
+      "Why does a Deployment create ReplicaSets?",
+      "How does a Service find its backing Pods?",
+      "What is the difference between readiness and liveness probes?"
+    ]
+  },
+  {
+    "id": "system-design-cache",
+    "problem": "Repeatedly computing or fetching the same data increases latency and load on databases and downstream services.",
+    "concepts": [
+      [
+        "Cache-aside",
+        "The application checks the cache first. On a miss, it reads the source of truth, stores the result with a TTL, and returns it."
+      ],
+      [
+        "TTL and eviction",
+        "TTL bounds how long an entry may remain valid. Eviction policies decide which entries leave when memory is constrained."
+      ],
+      [
+        "Invalidation",
+        "When source data changes, cached copies can become stale. Invalidation may be event-driven, explicit, or bounded by short TTLs."
+      ],
+      [
+        "Stampedes",
+        "Many requests can miss the same expired key simultaneously. Request coalescing, jittered TTLs, or stale-while-revalidate can reduce synchronized load."
+      ],
+      [
+        "Consistency and isolation",
+        "Cache keys must include dimensions that affect the result, such as tenant or user scope, to avoid cross-user data leakage."
+      ]
+    ],
+    "flow": "Request --> Cache lookup --hit--> Return cached value\nCache lookup --miss--> Source database --> Populate cache with TTL --> Return value",
+    "code": "def get_user(user_id, cache, repository):\n    key = f\"user:{user_id}\"\n    cached = cache.get(key)\n    if cached is not None:\n        return cached\n\n    user = repository.fetch_user(user_id)\n    if user is not None:\n        cache.set(key, user, ttl=300)\n    return user",
+    "use": [
+      "Caching expensive read-heavy database queries",
+      "Reducing latency for repeated reference data and computed results"
+    ],
+    "tradeoffs": [
+      "Caching reduces source load but introduces stale-data and invalidation complexity.",
+      "A distributed cache is shared across instances but adds network hops and another dependency to operate."
+    ],
+    "mistakes": [
+      "Using cache keys that omit tenant or authorization context.",
+      "Treating a cache as the source of truth or allowing all clients to stampede an expired key."
+    ],
+    "questions": [
+      "What is cache-aside?",
+      "Why is invalidation difficult?",
+      "How can a cache stampede be mitigated?"
+    ]
+  },
+  {
+    "id": "git-workflows",
+    "problem": "Multiple developers need to change the same codebase safely while keeping review, integration, and release history understandable.",
+    "concepts": [
+      [
+        "Commit",
+        "A commit records a snapshot and metadata. Small, focused commits make review and regression analysis easier."
+      ],
+      [
+        "Branch",
+        "A branch is a movable reference to a commit, allowing work to proceed independently before integration."
+      ],
+      [
+        "Pull request",
+        "A pull request provides a review and CI boundary where changes, tests, and discussion can be evaluated before merge."
+      ],
+      [
+        "Merge and rebase",
+        "Merge preserves branch history with a merge commit when appropriate. Rebase replays commits on a new base and rewrites their IDs."
+      ],
+      [
+        "Branch protection",
+        "Required reviews and status checks help prevent unreviewed or failing changes from reaching protected branches."
+      ]
+    ],
+    "flow": "Create feature branch --> Make focused commits --> Push branch --> Open pull request --> CI + review --> Merge",
+    "code": "git switch -c feature/add-health-check\n# edit files and run tests\ngit add src/health.py tests/test_health.py\ngit commit -m \"feat: add service health endpoint\"\ngit push -u origin feature/add-health-check\n# Open a pull request and wait for required checks/review.",
+    "use": [
+      "Team development with reviewable, traceable changes",
+      "Release workflows that require automated checks before merging"
+    ],
+    "tradeoffs": [
+      "Trunk-based development reduces long-lived divergence but requires reliable CI and small changes.",
+      "Feature branches isolate work but long-lived branches increase merge conflicts and integration risk."
+    ],
+    "mistakes": [
+      "Committing secrets or generated artifacts that should not be versioned.",
+      "Force-pushing shared branches without coordination or rewriting commits others depend on."
+    ],
+    "questions": [
+      "What makes a commit easy to review?",
+      "How does rebase differ from merge?",
+      "Which protections would you enable on a production branch?"
+    ]
+  },
+  {
+    "id": "web3-smart-contracts",
+    "problem": "A blockchain application needs shared state and rules that multiple parties can verify without relying on one application server as the sole authority.",
+    "concepts": [
+      [
+        "Transactions and state",
+        "A transaction proposes a state change. Network participants validate it according to protocol rules before it becomes part of the canonical chain."
+      ],
+      [
+        "Deterministic execution",
+        "Smart-contract execution must produce consistent results across participating nodes for the same state and transaction."
+      ],
+      [
+        "Gas",
+        "Computation and storage consume protocol-defined resources. Gas accounting discourages unbounded execution and prices scarce block resources."
+      ],
+      [
+        "Events and storage",
+        "Contracts can persist state and emit events. Events support off-chain indexing but are not a replacement for contract storage when on-chain reads are required."
+      ],
+      [
+        "Security and immutability",
+        "Deployed code and state changes can be difficult to reverse. Access control, invariant testing, audits, and upgrade design matter."
+      ]
+    ],
+    "flow": "User wallet --> Signed transaction --> Network validation + consensus --> Contract execution --> State update + event",
+    "code": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ncontract Counter {\n    uint256 public value;\n\n    event ValueChanged(uint256 newValue);\n\n    function increment() external {\n        value += 1;\n        emit ValueChanged(value);\n    }\n}",
+    "use": [
+      "Transparent registries or shared workflows with multi-party verification",
+      "Token and digital-asset logic where on-chain state is a requirement"
+    ],
+    "tradeoffs": [
+      "Public verifiability can improve auditability but exposes data and makes mistakes costly.",
+      "On-chain execution provides shared guarantees but has latency, fee, and throughput constraints."
+    ],
+    "mistakes": [
+      "Assuming deployed code is secure because it is immutable.",
+      "Storing secrets on a public chain or failing to test authorization and state invariants."
+    ],
+    "questions": [
+      "Why must smart-contract execution be deterministic?",
+      "What does gas measure?",
+      "Why are contract upgrades and access control sensitive design decisions?"
+    ]
+  },
+  {
+    "id": "observability",
+    "problem": "In a distributed application, a user-visible failure may cross several services, queues, and databases, making a single log line insufficient to explain what happened.",
+    "concepts": [
+      [
+        "Logs",
+        "Logs record discrete events and should be structured with timestamps, severity, service name, and correlation context."
+      ],
+      [
+        "Metrics",
+        "Metrics aggregate numeric measurements over time, such as request rate, error rate, latency distributions, and resource saturation."
+      ],
+      [
+        "Traces",
+        "Distributed traces connect spans across service boundaries to show where time is spent in a request path."
+      ],
+      [
+        "Correlation",
+        "Trace IDs and request IDs help connect logs, metrics, and traces without relying on fragile text searches."
+      ],
+      [
+        "SLOs and alerts",
+        "Service-level objectives define reliability targets. Alerts should signal actionable user impact or a condition likely to cause it."
+      ]
+    ],
+    "flow": "Request enters service --> Trace/span created --> Logs + metrics emitted --> Context propagated downstream --> Telemetry backend --> Dashboards + alerts",
+    "code": "import json\nimport logging\n\nlogger = logging.getLogger(\"orders\")\nlogging.basicConfig(level=logging.INFO)\n\ndef log_order_created(order_id: str, trace_id: str) -> None:\n    logger.info(json.dumps({\n        \"event\": \"order_created\",\n        \"order_id\": order_id,\n        \"trace_id\": trace_id,\n    }))\n\n# Never include passwords, access tokens, or sensitive personal data in logs.",
+    "use": [
+      "Diagnosing latency and failures across microservices",
+      "Monitoring service-level objectives and capacity trends"
+    ],
+    "tradeoffs": [
+      "High-cardinality labels improve filtering but can make metrics expensive or unbounded.",
+      "Detailed traces help debugging but require sampling and careful handling of sensitive attributes."
+    ],
+    "mistakes": [
+      "Logging credentials or personal data that should not be collected.",
+      "Alerting on every low-level error instead of symptoms that matter to users."
+    ],
+    "questions": [
+      "What questions do logs, metrics, and traces answer?",
+      "Why are high-cardinality metric labels risky?",
+      "How do trace IDs help investigate a distributed request?"
+    ]
+  },
+  {
+    "id": "oauth2",
+    "problem": "An application needs permission to access a user's resources without asking the user to share their password with every client application.",
+    "concepts": [
+      [
+        "Roles",
+        "The resource owner grants access; the client requests it; the authorization server issues tokens; the resource server protects the API."
+      ],
+      [
+        "Authorization code flow",
+        "A client redirects the user to the authorization server and receives an authorization code through a registered redirect URI. The code is exchanged for tokens."
+      ],
+      [
+        "PKCE and state",
+        "PKCE binds the code exchange to a verifier held by the client. State helps correlate the response and mitigate cross-site request forgery."
+      ],
+      [
+        "Scopes and audience",
+        "Scopes describe delegated permissions. Audience identifies the intended resource server; tokens should not be accepted by unrelated APIs."
+      ],
+      [
+        "OpenID Connect",
+        "OIDC adds an identity layer over OAuth 2.0, including ID tokens and standardized authentication claims."
+      ]
+    ],
+    "flow": "Client --> Authorization server (user consent) --> Redirect with code --> Code + PKCE verifier exchange --> Access token --> Resource API",
+    "code": "# Conceptual authorization-code + PKCE checklist\nchecks = [\n    \"Use an exact registered redirect URI\",\n    \"Generate and verify a per-request state value\",\n    \"Use PKCE for public clients and modern authorization-code flows\",\n    \"Validate token issuer, audience, expiry, and signature\",\n    \"Request only the scopes the feature needs\",\n]\nfor item in checks:\n    print(\"[ ]\", item)",
+    "use": [
+      "Sign-in and delegated API access in web and mobile applications",
+      "Allowing a user to authorize a third-party integration without disclosing credentials"
+    ],
+    "tradeoffs": [
+      "OAuth provides delegated authorization; OIDC should be used when standardized user authentication information is needed.",
+      "Refresh tokens improve user experience but require secure storage, rotation, and revocation controls."
+    ],
+    "mistakes": [
+      "Treating an OAuth access token as an identity assertion without validating an OIDC ID token.",
+      "Skipping state, PKCE, redirect URI validation, or audience checks."
+    ],
+    "questions": [
+      "What does OAuth 2.0 authorize?",
+      "What does OpenID Connect add?",
+      "Why are state and PKCE both important?"
+    ]
+  },
+  {
+    "id": "machine-learning-overfit",
+    "problem": "A model can perform very well on examples it has seen while failing on new data, which means training performance alone is not evidence of useful generalization.",
+    "concepts": [
+      [
+        "Underfitting",
+        "A model with insufficient capacity or poor features cannot capture important patterns, so both training and validation performance are weak."
+      ],
+      [
+        "Overfitting",
+        "A model learns noise or accidental details in training data. Training performance improves while validation performance degrades."
+      ],
+      [
+        "Data splitting",
+        "Training data fits parameters, validation data supports model selection, and a final test set estimates performance after decisions are complete."
+      ],
+      [
+        "Regularization",
+        "Penalties, early stopping, data augmentation, and simpler models can reduce sensitivity to noise."
+      ],
+      [
+        "Data leakage",
+        "Information unavailable at prediction time accidentally enters training or evaluation, producing misleadingly optimistic results."
+      ]
+    ],
+    "flow": "Raw data --> Split by appropriate unit/time --> Train model --> Validate + tune --> Freeze choices --> Final test evaluation",
+    "code": "from sklearn.model_selection import train_test_split\nfrom sklearn.pipeline import make_pipeline\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.metrics import classification_report\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42, stratify=y\n)\nmodel = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))\nmodel.fit(X_train, y_train)\npredictions = model.predict(X_test)\nprint(classification_report(y_test, predictions))",
+    "use": [
+      "Evaluating predictive models before deployment",
+      "Choosing model complexity and regularization during experimentation"
+    ],
+    "tradeoffs": [
+      "A simple model may generalize better and be easier to explain; a complex model may capture richer patterns but needs stronger evaluation.",
+      "Random splits are not suitable for every dataset; time-dependent or grouped data needs split strategies that prevent leakage."
+    ],
+    "mistakes": [
+      "Repeatedly tuning against the final test set until it becomes part of the training process.",
+      "Fitting preprocessing on the full dataset before splitting, leaking test-set information."
+    ],
+    "questions": [
+      "How do training and validation curves reveal overfitting?",
+      "Why should preprocessing be inside a pipeline?",
+      "When should a time-based split replace a random split?"
+    ]
+  },
+  {
+    "id": "edge-computing",
+    "problem": "Sending every raw event to a distant cloud can add latency, consume bandwidth, and make applications fragile when connectivity is intermittent.",
+    "concepts": [
+      [
+        "Local processing",
+        "An edge node processes data near the source, potentially filtering, aggregating, or responding locally."
+      ],
+      [
+        "Cloud coordination",
+        "Central cloud services remain useful for fleet management, long-term analytics, model distribution, and cross-site aggregation."
+      ],
+      [
+        "Connectivity and synchronization",
+        "Edge systems must tolerate offline periods, retries, clock differences, and eventual synchronization."
+      ],
+      [
+        "Device lifecycle",
+        "Secure provisioning, updates, inventory, monitoring, and retirement are core parts of operating an edge fleet."
+      ],
+      [
+        "Workload placement",
+        "Choose local versus cloud execution based on latency, privacy, bandwidth, compute, power, and operational constraints."
+      ]
+    ],
+    "flow": "Sensors/devices --> Edge gateway (filter + act locally) --> Buffered events --> Cloud ingestion --> Fleet management + analytics",
+    "code": "from collections import deque\n\n# A tiny in-memory illustration of buffering events while offline.\npending_events = deque(maxlen=1000)\n\ndef handle_sensor_event(event, connected):\n    if not connected:\n        pending_events.append(event)\n        return \"buffered\"\n    # A real system would use durable storage and acknowledged delivery.\n    return \"sent-to-cloud\"\n\nprint(handle_sensor_event({\"temperature\": 24.5}, connected=False))",
+    "use": [
+      "Industrial monitoring where local response time matters",
+      "Connected devices operating over constrained or intermittent networks"
+    ],
+    "tradeoffs": [
+      "Local processing reduces round trips but distributes deployment and security responsibility across many devices.",
+      "Buffering improves resilience but requires limits, ordering rules, replay handling, and durable storage."
+    ],
+    "mistakes": [
+      "Assuming edge computing eliminates the need for cloud coordination.",
+      "Ignoring secure device updates, offline recovery, and fleet-wide observability."
+    ],
+    "questions": [
+      "Which requirements justify processing at the edge?",
+      "How should buffered events be replayed safely?",
+      "What operational responsibilities grow with a large device fleet?"
+    ]
+  },
+  {
+    "id": "http3-quic",
+    "problem": "Traditional transport behavior can create latency and connection-management challenges for modern applications, especially when multiple streams share one connection.",
+    "concepts": [
+      [
+        "HTTP/3",
+        "HTTP/3 maps HTTP semantics onto QUIC rather than TCP. The application-level methods, status codes, and headers remain familiar."
+      ],
+      [
+        "QUIC transport",
+        "QUIC runs over UDP and integrates TLS 1.3 handshake mechanisms, connection IDs, and independent streams."
+      ],
+      [
+        "Stream independence",
+        "Loss affecting one QUIC stream does not impose TCP-style transport head-of-line blocking on unrelated streams in the same connection."
+      ],
+      [
+        "Connection migration",
+        "Connection IDs can help a connection survive some client network changes, such as switching between Wi-Fi and mobile networks."
+      ],
+      [
+        "Deployment",
+        "HTTP/3 support depends on clients, servers, networks, and intermediaries. HTTP/2 or HTTP/1.1 fallback remains important."
+      ]
+    ],
+    "flow": "Browser negotiates protocol --> QUIC connection over UDP --> Independent streams --> HTTP/3 requests and responses",
+    "code": "import subprocess\n\n# Check whether your installed curl build supports HTTP/3.\nresult = subprocess.run(\n    [\"curl\", \"--version\"], capture_output=True, text=True, check=True\n)\nprint(result.stdout.splitlines()[0])\nprint(\"Look for HTTP3 in the listed supported features.\")\n\n# If supported by your curl build and target server:\n# curl --http3 -I https://example.com",
+    "use": [
+      "Web applications with many concurrent requests",
+      "Mobile clients that may change networks during a session"
+    ],
+    "tradeoffs": [
+      "QUIC can improve connection setup and stream behavior, but UDP may be restricted or shaped on some networks.",
+      "HTTP/3 requires compatible infrastructure and observability; protocol negotiation and fallback should be monitored."
+    ],
+    "mistakes": [
+      "Describing HTTP/3 as simply HTTP/2 over UDP without understanding QUIC's transport design.",
+      "Assuming every client and network path supports HTTP/3."
+    ],
+    "questions": [
+      "Why does QUIC use independent streams?",
+      "How does HTTP/3 differ from HTTP/2 at the transport layer?",
+      "Why is fallback behavior important?"
+    ]
+  },
+  {
+    "id": "data-warehousing",
+    "problem": "Operational databases are optimized for transactions, while analytics often needs to scan, aggregate, and compare large volumes of historical data.",
+    "concepts": [
+      [
+        "OLTP and OLAP",
+        "OLTP systems handle many small transactional reads and writes. OLAP systems support analytical queries over larger datasets."
+      ],
+      [
+        "Data lake",
+        "A lake stores data in varied formats, often retaining raw or lightly processed data for future use."
+      ],
+      [
+        "Warehouse",
+        "A warehouse organizes curated, structured data for consistent reporting and analytical workloads."
+      ],
+      [
+        "Lakehouse",
+        "A lakehouse combines data-lake storage flexibility with table management and governance features associated with warehouses."
+      ],
+      [
+        "Pipelines and governance",
+        "Reliable analytics requires quality checks, lineage, schema evolution, access control, and clear ownership."
+      ]
+    ],
+    "flow": "Operational sources --> Ingestion (batch/stream) --> Raw zone --> Transform + quality checks --> Curated tables --> BI / analytics",
+    "code": "# A simple pandas quality check before loading an analytical dataset.\nimport pandas as pd\n\norders = pd.DataFrame([\n    {\"order_id\": 1, \"amount\": 120.0},\n    {\"order_id\": 2, \"amount\": 75.0},\n])\n\nassert orders[\"order_id\"].is_unique, \"duplicate order IDs\"\nassert orders[\"amount\"].notna().all(), \"missing amounts\"\nassert (orders[\"amount\"] >= 0).all(), \"negative order amount\"\nprint(orders.groupby(orders[\"amount\"] >= 100)[\"order_id\"].count())",
+    "use": [
+      "Business intelligence and historical reporting",
+      "Combining data from multiple operational systems for governed analysis"
+    ],
+    "tradeoffs": [
+      "Batch pipelines are simpler and often cheaper; streaming reduces freshness delay but increases operational complexity.",
+      "Centralized curated models improve consistency but require ownership and change-management discipline."
+    ],
+    "mistakes": [
+      "Loading data without validation, lineage, or schema-change handling.",
+      "Treating a storage choice as a complete data architecture."
+    ],
+    "questions": [
+      "How do OLTP and OLAP workloads differ?",
+      "What does data lineage help an engineer understand?",
+      "When is streaming worth its added complexity?"
+    ]
+  },
+  {
+    "id": "serverless",
+    "problem": "Teams want to run event-driven application code without provisioning and patching a fleet of servers for every workload.",
+    "concepts": [
+      [
+        "Function as a service",
+        "A function runs in response to an event and is managed by a cloud provider's execution platform."
+      ],
+      [
+        "Scaling and concurrency",
+        "The platform can create execution environments as demand changes, subject to quotas and concurrency limits."
+      ],
+      [
+        "Cold starts",
+        "An invocation may pay setup cost when a new execution environment is initialized. Runtime, package size, networking, and initialization work affect this."
+      ],
+      [
+        "Statelessness and external state",
+        "Execution environments may be reused but should not be treated as durable storage. Persist state in managed databases, queues, or object stores."
+      ],
+      [
+        "Operational constraints",
+        "Timeouts, memory limits, event size, vendor-specific integrations, and observability shape the architecture."
+      ]
+    ],
+    "flow": "Event source --> Function trigger --> Managed runtime --> Function code --> Managed database / queue / downstream service",
+    "code": "def handler(event, context=None):\n    \"\"\"Example event handler shape; provider adapters differ.\"\"\"\n    name = event.get(\"name\", \"there\")\n    return {\n        \"statusCode\": 200,\n        \"body\": f\"Hello, {name}!\",\n    }\n\nif __name__ == \"__main__\":\n    print(handler({\"name\": \"TechPulse\"}))",
+    "use": [
+      "Scheduled jobs, webhook handlers, and event-driven transformations",
+      "Bursty workloads where idle server capacity would be wasteful"
+    ],
+    "tradeoffs": [
+      "Serverless reduces infrastructure management but can introduce cold starts, platform limits, and vendor coupling.",
+      "Per-invocation billing can be efficient for intermittent workloads but requires careful cost modelling at sustained high volume."
+    ],
+    "mistakes": [
+      "Assuming serverless means there are no servers or operational responsibilities.",
+      "Storing critical state only in a function's local filesystem or memory."
+    ],
+    "questions": [
+      "What does the cloud provider manage in FaaS?",
+      "Why can cold starts happen?",
+      "Which workloads might be a poor fit for serverless?"
+    ]
+  },
+  {
+    "id": "software-testing-pyramid",
+    "problem": "A software system needs fast feedback during development and enough end-to-end confidence that integrated components work together.",
+    "concepts": [
+      [
+        "Unit tests",
+        "Unit tests check a small unit in isolation and are usually fast. They are useful for business rules and edge cases."
+      ],
+      [
+        "Integration tests",
+        "Integration tests exercise boundaries such as database access, message brokers, or HTTP clients to catch wiring and contract problems."
+      ],
+      [
+        "End-to-end tests",
+        "E2E tests drive a system through user-visible workflows. They provide broad confidence but are slower and more prone to environmental flakiness."
+      ],
+      [
+        "Test doubles",
+        "Mocks and fakes can isolate dependencies, but over-mocking can make tests pass while real integrations are broken."
+      ],
+      [
+        "Feedback balance",
+        "The pyramid is a heuristic, not a strict ratio. Choose test level based on risk, failure modes, and maintenance cost."
+      ]
+    ],
+    "flow": "Many fast unit tests --> Focused integration tests --> Small set of critical end-to-end journeys",
+    "code": "def calculate_total(items):\n    return sum(item[\"price\"] * item[\"quantity\"] for item in items)\n\n\ndef test_calculate_total():\n    items = [\n        {\"price\": 10, \"quantity\": 2},\n        {\"price\": 5, \"quantity\": 3},\n    ]\n    assert calculate_total(items) == 35\n\n\nif __name__ == \"__main__\":\n    test_calculate_total()\n    print(\"unit test passed\")",
+    "use": [
+      "Validating business rules on every code change",
+      "Testing database, API, and critical user journeys before release"
+    ],
+    "tradeoffs": [
+      "More unit tests provide fast feedback but cannot prove infrastructure wiring works.",
+      "E2E tests provide realistic coverage but need stable test data, environments, and careful failure diagnosis."
+    ],
+    "mistakes": [
+      "Treating the pyramid as a mandatory numeric ratio rather than a risk-based guideline.",
+      "Mocking every dependency so tests no longer verify real integration contracts."
+    ],
+    "questions": [
+      "What should a unit test isolate?",
+      "When is an integration test more valuable than a mock?",
+      "How would you reduce flaky end-to-end tests?"
+    ]
+  }
+]
