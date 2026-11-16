@@ -6,7 +6,7 @@ TechPulse researches and publishes one educational technology article per day us
 
 - Runs daily at 06:00 India Standard Time (00:30 UTC).
 - Uses AI-assisted web research to select a useful engineering topic and draft an original article.
-- Uses web search during generation; the article must include links to sources actually consulted.
+- Uses Groq built-in browser search during generation; the article must include links to sources actually consulted.
 - Covers engineering concepts, architecture, practical code, use cases, trade-offs, mistakes, exercises, and interview questions.
 - Validates article structure, minimum length, source links, and code-fence balance before publishing.
 - Maintains publication history, prevents duplicate daily articles, and rebuilds the article index.
@@ -44,7 +44,7 @@ The existing deterministic publisher (`scripts/generate_article.py`) and curated
 
 ## Setup
 
-### 1. Create an Groq API key
+### 1. Create a Groq API key
 
 Create an API key in the Groq Console. API usage is billed separately from a ChatGPT subscription.
 
@@ -80,8 +80,8 @@ Python 3.10+ is required.
 
 ```bash
 python -m pip install openai
-export OPENAI_API_KEY="your-key"
-export OPENAI_MODEL="gpt-6-astra"  # optional
+export GROQ_API_KEY="your-key"
+export GROQ_MODEL="openai/gpt-oss-120b"  # optional
 python scripts/ai_publisher.py
 ```
 
@@ -89,8 +89,8 @@ On Windows PowerShell:
 
 ```powershell
 python -m pip install openai
-$env:OPENAI_API_KEY="your-key"
-$env:OPENAI_MODEL="gpt-6-astra"  # optional
+$env:GROQ_API_KEY="your-key"
+$env:GROQ_MODEL="openai/gpt-oss-120b"  # optional
 python scripts/ai_publisher.py
 ```
 
