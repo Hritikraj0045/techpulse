@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install AI publisher dependency
+      - name: Install Groq-compatible OpenAI client
         run: python -m pip install --upgrade openai
 
       - name: Validate project data and Python syntax
@@ -36,8 +36,8 @@ jobs:
 
       - name: Research and write today's article with AI
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL: ${{ vars.OPENAI_MODEL || 'gpt-6-astra' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || 'openai/gpt-oss-120b' }}
         run: python scripts/ai_publisher.py
 
       - name: Commit and push article
