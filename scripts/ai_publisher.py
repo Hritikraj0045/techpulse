@@ -53,7 +53,9 @@ Return Markdown only, beginning with exactly one H1 title. Include:
 - common implementation mistakes and security/reliability considerations
 - a hands-on exercise and 5 interview/review questions
 - conclusion
-- "## Sources and further reading" with at least 4 direct Markdown links to sources actually consulted.
+- An exact heading "## Sources and further reading" with at least 4 direct Markdown links to sources actually consulted.
+- An exact heading "## Conclusion".
+Use these exact section headings: "## Introduction", "## Sources and further reading", and "## Conclusion".
 Use inline links for factual claims where possible. Never fabricate URLs, quotes, benchmarks,
 release dates, API behavior, or source attributions. Distinguish established facts from your own
 recommendations. If evidence is uncertain or conflicting, say so. Avoid generic filler and repetitive
@@ -79,11 +81,16 @@ def validate(article):
     words = re.findall(r"\b[\w'-]+\b", re.sub(r"```.*?```", "", article, flags=re.S))
     if len(words) < MIN_WORDS:
         raise RuntimeError(f"Article quality gate failed: {len(words)} words; need at least {MIN_WORDS}.")
-    required = [
-        "## Introduction", "## Sources and further reading",
-        "## Conclusion",
-    ]
-    missing = [heading for heading in required if heading.lower() not in article.lower()]
+    headings = {
+        re.sub(r"\\s+", " ", line.lstrip("#").strip().lower())
+        for line in article.splitlines()
+        if line.startswith("#")
+    }
+    def has_heading(target):
+        return target.lower() in headings
+
+    required = ["introduction", "sources and further reading", "conclusion"]
+    missing = [heading for heading in required if not has_heading(heading)]
     if missing:
         raise RuntimeError("Missing required sections: " + ", ".join(missing))
     links = re.findall(r"\]\((https?://[^)]+)\)", article)
