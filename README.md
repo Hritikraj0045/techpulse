@@ -1,45 +1,120 @@
-# TechPulse — Automated Technology Blog
+# TechPulse — AI-Powered Technology Blog
 
-TechPulse publishes one educational technology article per day using Python and GitHub Actions. It requires no paid AI provider, API key, or third-party Python package.
+TechPulse researches and publishes one educational technology article per day using the OpenAI Responses API, web search, Python, and GitHub Actions.
 
 ## What it does
+
 - Runs daily at 06:00 India Standard Time (00:30 UTC).
-- Rotates through the topic catalogue without repeating topics until a full rotation is exhausted.
-- Uses topic-specific editorial blueprints.
-- Produces concepts, Mermaid flow diagrams, relevant code samples, use cases, trade-offs, common mistakes, exercises, interview questions, and references.
-- Maintains publication history and rebuilds the article index.
-- Prevents more than one publication per local calendar date.
+- Uses AI-assisted web research to select a useful engineering topic and draft an original article.
+- Uses web search during generation; the article must include links to sources actually consulted.
+- Covers engineering concepts, architecture, practical code, use cases, trade-offs, mistakes, exercises, and interview questions.
+- Validates article structure, minimum length, source links, and code-fence balance before publishing.
+- Maintains publication history, prevents duplicate daily articles, and rebuilds the article index.
+- Supports manual execution through GitHub Actions.
 
-## Content model and limitations
-This is a deterministic editorial engine, not an AI researcher. Explanations and examples are curated in the blueprint file. It does not browse for breaking news or independently fact-check sources. A length check is not a factual accuracy check. Review and test content before treating it as authoritative.
+## Architecture
 
-## Key files
-- `data/topics.json`: topic catalogue, tags, categories, and references.
-- `data/blueprints.json`: topic-specific explanations, diagrams, code, use cases, trade-offs, mistakes, and questions.
-- `scripts/generate_article.py`: article generation, duplicate prevention, and index rebuild.
-- `data/state.json`: publication history and topic rotation.
-- `index.md`: automatically rebuilt article index.
+```text
+GitHub Actions (daily schedule)
+        |
+        v
+AI Publisher (scripts/ai_publisher.py)
+        |
+        +--> OpenAI Responses API
+        |       |
+        |       +--> Web search for current source material
+        |       +--> Topic selection and research synthesis
+        |       +--> Markdown article drafting
+        |
+        v
+Quality gates
+        |
+        +--> Required sections and minimum word count
+        +--> At least four distinct source links
+        +--> Code-fence validation
+        |
+        v
+Article archive + publication state + index.md
+        |
+        v
+Git commit and push
+```
+
+The existing deterministic publisher (`scripts/generate_article.py`) and curated blueprints remain available as a no-API fallback for local experimentation. The scheduled workflow now uses the AI publisher.
+
+## Setup
+
+### 1. Create an OpenAI API key
+
+Create an API key in the OpenAI developer platform. API usage is billed separately from a ChatGPT subscription.
+
+### 2. Add the GitHub Actions secret
+
+In the repository, open:
+
+**Settings → Secrets and variables → Actions → New repository secret**
+
+Add:
+
+- Name: `OPENAI_API_KEY`
+- Value: your API key
+
+Never commit the key to the repository or put it in source code.
+
+### 3. Optional model configuration
+
+Under **Settings → Secrets and variables → Actions → Variables**, add:
+
+- Name: `OPENAI_MODEL`
+- Value: a model available to your API project (default: `gpt-6-astra`)
+
+### 4. Run a manual test
+
+Open **Actions → TechPulse Daily Blog → Run workflow**.
+
+Check the workflow logs and inspect the generated article under `articles/YYYY/MM-Month/`.
 
 ## Run locally
-Python 3.9+:
+
+Python 3.10+ is required.
+
 ```bash
-python scripts/generate_article.py
-python scripts/generate_article.py --topic-id docker-containers
-python scripts/generate_article.py --date 2026-11-16
+python -m pip install openai
+export OPENAI_API_KEY="your-key"
+export OPENAI_MODEL="gpt-6-astra"  # optional
+python scripts/ai_publisher.py
 ```
-A date already in the publication history is skipped.
 
-## Add a topic
-Add a topic to `data/topics.json` and a matching blueprint to `data/blueprints.json`. The IDs must match. Use authoritative references and verify version-specific claims before public use.
+On Windows PowerShell:
 
-## GitHub setup
-1. Push the project to the repository's default branch.
-2. Open Settings → Actions → General.
-3. Enable Read and write permissions under Workflow permissions.
-4. Ensure Actions is enabled.
-5. Run Actions → TechPulse Daily Blog → Run workflow to test.
+```powershell
+python -m pip install openai
+$env:OPENAI_API_KEY="your-key"
+$env:OPENAI_MODEL="gpt-6-astra"  # optional
+python scripts/ai_publisher.py
+```
 
-The workflow uses GitHub's built-in GITHUB_TOKEN; no personal access token is required. GitHub scheduled jobs can be delayed during high-load periods.
+To generate for a specific date:
 
-## Schedule
-GitHub cron is UTC. 30 0 * * * is 06:00 in India (UTC+05:30).
+```bash
+python scripts/ai_publisher.py 2026-11-16
+```
+
+A date already present in publication history is skipped.
+
+## Project structure
+
+- `scripts/ai_publisher.py`: AI research, article drafting, validation, and publishing.
+- `scripts/generate_article.py`: deterministic curated-content publisher.
+- `data/topics.json`: original topic catalogue.
+- `data/blueprints.json`: curated topic-specific fallback material.
+- `data/state.json`: publication dates, titles, and rotation state.
+- `articles/`: dated Markdown articles.
+- `index.md`: automatically rebuilt article index.
+- `.github/workflows/daily-blog.yml`: daily automation.
+
+## Editorial and reliability notes
+
+AI web research and structural checks do not guarantee factual correctness. A source link can be valid without supporting every claim. Review important claims, check source dates and version compatibility, and test code before production use. The publisher fails rather than publishing if the API key is missing, the response is empty, required sections are missing, the article is too short, or there are fewer than four distinct linked sources.
+
+GitHub scheduled workflows may start later than the requested cron time during periods of high load. The workflow needs repository Actions write permissions to commit generated articles.
