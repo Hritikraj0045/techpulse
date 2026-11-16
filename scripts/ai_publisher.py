@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""AI-powered TechPulse publisher using the OpenAI Responses API and web search."""
+"""AI-powered TechPulse publisher using Groq GPT-OSS and built-in browser search."""
 import json
 import os
 import re
@@ -12,7 +12,7 @@ from openai import OpenAI
 
 ROOT = Path(__file__).resolve().parents[1]
 TZ = ZoneInfo("Asia/Kolkata")
-MODEL = os.getenv("OPENAI_MODEL", "gpt-6-astra")
+MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 MIN_WORDS = int(os.getenv("TECHPULSE_MIN_WORDS", "900"))
 MAX_WORDS = int(os.getenv("TECHPULSE_MAX_WORDS", "2200"))
 
@@ -34,7 +34,7 @@ def research_and_write(client, date, history):
     prompt = f"""
 You are the research editor and senior technical writer for TechPulse, an engineering publication.
 Today's publication date is {date}. Select ONE timely, useful topic for software engineers.
-Use web search to research it before writing. Prefer official documentation, standards, original
+Use the built-in browser search tool to research it before writing. Prefer official documentation, standards, original
 engineering posts, release notes, and primary research. Avoid repeating these recent article titles:
 {json.dumps(history, ensure_ascii=False)}
 
@@ -63,7 +63,8 @@ and code tested before production use.
 """
     response = client.responses.create(
         model=MODEL,
-        tools=[{"type": "web_search"}],
+        tools=[{"type": "browser_search"}],
+        tool_choice="required",
         input=prompt,
     )
     article = (response.output_text or "").strip()
@@ -93,8 +94,8 @@ def validate(article):
 
 
 def main():
-    if not os.getenv("OPENAI_API_KEY"):
-        raise SystemExit("OPENAI_API_KEY is not configured. Add it as a GitHub Actions repository secret.")
+    if not os.getenv("GROQ_API_KEY"):
+        raise SystemExit("GROQ_API_KEY is not configured. Add it as a GitHub Actions repository secret.")
     now = datetime.now(TZ)
     if len(sys.argv) > 1:
         now = datetime.strptime(sys.argv[1], "%Y-%m-%d").replace(tzinfo=TZ)
@@ -107,7 +108,12 @@ def main():
         print("Already published for " + day + "; skipping.")
         return
 
-    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=180.0, max_retries=2)
+    client = OpenAI(
+        api_key=os.environ["GROQ_API_KEY"],
+        base_url="https://api.groq.com/openai/v1",
+        timeout=240.0,
+        max_retries=2,
+    )
     article = research_and_write(client, day, recent_topics(state))
     validate(article)
 
