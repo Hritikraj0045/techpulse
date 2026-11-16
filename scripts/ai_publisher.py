@@ -82,7 +82,7 @@ def validate(article):
     if len(words) < MIN_WORDS:
         raise RuntimeError(f"Article quality gate failed: {len(words)} words; need at least {MIN_WORDS}.")
     headings = {
-        re.sub(r"\\s+", " ", line.lstrip("#").strip().lower())
+        re.sub(r"[：:。.!]+$", "", re.sub(r"\\s+", " ", line.lstrip("#").strip().lower()))
         for line in article.splitlines()
         if line.startswith("#")
     }
