@@ -1,6 +1,6 @@
 # TechPulse — AI-Powered Technology Blog
 
-TechPulse researches and publishes one educational technology article per day using the OpenAI Responses API, web search, Python, and GitHub Actions.
+TechPulse researches and publishes one educational technology article per day using Groq GPT-OSS, built-in browser search, Python, and GitHub Actions.
 
 ## What it does
 
@@ -20,7 +20,7 @@ GitHub Actions (daily schedule)
         v
 AI Publisher (scripts/ai_publisher.py)
         |
-        +--> OpenAI Responses API
+        +--> Groq Responses API
         |       |
         |       +--> Web search for current source material
         |       +--> Topic selection and research synthesis
@@ -44,9 +44,9 @@ The existing deterministic publisher (`scripts/generate_article.py`) and curated
 
 ## Setup
 
-### 1. Create an OpenAI API key
+### 1. Create an Groq API key
 
-Create an API key in the OpenAI developer platform. API usage is billed separately from a ChatGPT subscription.
+Create an API key in the Groq Console. API usage is billed separately from a ChatGPT subscription.
 
 ### 2. Add the GitHub Actions secret
 
@@ -56,7 +56,7 @@ In the repository, open:
 
 Add:
 
-- Name: `OPENAI_API_KEY`
+- Name: `GROQ_API_KEY`
 - Value: your API key
 
 Never commit the key to the repository or put it in source code.
@@ -65,8 +65,8 @@ Never commit the key to the repository or put it in source code.
 
 Under **Settings → Secrets and variables → Actions → Variables**, add:
 
-- Name: `OPENAI_MODEL`
-- Value: a model available to your API project (default: `gpt-6-astra`)
+- Name: `GROQ_MODEL`
+- Value: a model available to your API project (default: `openai/gpt-oss-120b`)
 
 ### 4. Run a manual test
 
