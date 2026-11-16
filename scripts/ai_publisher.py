@@ -67,11 +67,36 @@ and code tested before production use.
         model=MODEL,
         tools=[{"type": "browser_search"}],
         tool_choice="required",
+        max_output_tokens=10000,
         input=prompt,
     )
     article = (response.output_text or "").strip()
     if not article:
         raise RuntimeError("The model returned an empty article.")
+
+    # A short first draft is expanded once instead of failing publication immediately.
+    word_count = len(re.findall(r"\\b[\\w'-]+\\b", re.sub(r"```.*?```", "", article, flags=re.S)))
+    if word_count < MIN_WORDS:
+        expansion_prompt = f"""
+Expand the following TechPulse draft into a complete article of at least {MIN_WORDS} words
+(excluding fenced code). Aim for {MIN_WORDS + 250} to {MIN_WORDS + 500} words.
+Preserve its topic, factual meaning, and existing source URLs. Do not invent sources,
+dates, benchmarks, or claims. Add useful technical depth, implementation details,
+trade-offs, pitfalls, and a practical example where appropriate. Keep the exact headings
+"## Introduction", "## Sources and further reading", and "## Conclusion".
+Return the complete revised Markdown article only, beginning with its H1 title.
+
+DRAFT:
+{article}
+"""
+        expanded = client.responses.create(
+            model=MODEL,
+            input=expansion_prompt,
+            max_output_tokens=10000,
+        )
+        expanded_article = (expanded.output_text or "").strip()
+        if expanded_article:
+            article = expanded_article
     return article
 
 
